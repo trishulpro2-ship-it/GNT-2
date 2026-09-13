@@ -1,0 +1,391 @@
+blueprint_version: "1.0.0"
+module: M01-purchase
+owner: M01-purchase
+stack:
+  backend: "NestJS + Prisma"
+  frontend: "React + TypeScript"
+  tests: "Jest (unit) + supertest (api) + integration"
+description: >
+  Purchase Management — Supplier se start hokar RFQ, Quotation, Purchase Order,
+  receiving reference, Purchase Invoice, Purchase Return aur Supplier Settlement
+  tak ka poora workflow. Inventory ownership yahan NAHI hai (M02).
+
+external_contracts:
+  - target: M02-inventory
+    file: contracts/M01_to_M02_inventory.yaml
+    fields: [product, quantity, unit, warehouse, receipt, grn_reference, stock_movement_reference]
+  - target: M04-gst
+    file: contracts/M01_to_M04_gst.yaml
+    fields: [supplier, gstin, hsn_sac, taxable_value, cgst, sgst, igst, cess, invoice_reference]
+  - target: M05-account
+    file: contracts/M01_to_M05_account.yaml
+    fields: [supplier_payable, purchase_value, freight_cost, invoice_value, payment_reference, accounting_reference]
+
+forbidden:
+  - "Stock ownership (belongs to M02-inventory)"
+  - "Sales logic (M06 onward)"
+  - "GST calculation/compliance (belongs to M04-gst)"
+  - "Ledger/Journal (belongs to M05-account)"
+  - "Payroll/HR (belongs to Management module)"
+  - "Direct DB/internal access into any other module"
+
+# ---------------------------------------------------------------------------
+# हर file जो generator बनाना जानता है, यहाँ declare है।
+# generator इस list के बाहर कोई file कभी नहीं बनाएगा — यही "single source
+# of truth" गारंटी है। नई file चाहिए तो पहले यहीं जोड़ी जाएगी, generator में नहीं।
+# ---------------------------------------------------------------------------
+files:
+  # ---------------- frontend/pages ----------------
+  - path: frontend/pages/PurchaseDashboard.tsx
+    type: react-page
+    purpose: Purchase dashboard
+  - path: frontend/pages/SupplierList.tsx
+    type: react-page
+    purpose: Supplier list
+    entity: Supplier
+  - path: frontend/pages/SupplierDetail.tsx
+    type: react-page
+    purpose: Supplier detail
+    entity: Supplier
+  - path: frontend/pages/RFQList.tsx
+    type: react-page
+    purpose: RFQ list
+    entity: RFQ
+  - path: frontend/pages/RFQCreate.tsx
+    type: react-page
+    purpose: RFQ create
+    entity: RFQ
+  - path: frontend/pages/QuotationList.tsx
+    type: react-page
+    purpose: Quotation list
+    entity: Quotation
+  - path: frontend/pages/QuotationCompare.tsx
+    type: react-page
+    purpose: Quotation compare
+    entity: Quotation
+  - path: frontend/pages/PurchaseOrderList.tsx
+    type: react-page
+    purpose: Purchase order list
+    entity: PurchaseOrder
+  - path: frontend/pages/PurchaseOrderCreate.tsx
+    type: react-page
+    purpose: Purchase order create
+    entity: PurchaseOrder
+  - path: frontend/pages/PurchaseOrderDetail.tsx
+    type: react-page
+    purpose: Purchase order detail
+    entity: PurchaseOrder
+  - path: frontend/pages/PurchaseReceiptList.tsx
+    type: react-page
+    purpose: Purchase receipt list
+    entity: Receipt
+  - path: frontend/pages/PurchaseInvoiceList.tsx
+    type: react-page
+    purpose: Purchase invoice list
+    entity: Invoice
+  - path: frontend/pages/PurchaseInvoiceCreate.tsx
+    type: react-page
+    purpose: Purchase invoice create
+    entity: Invoice
+  - path: frontend/pages/PurchaseReturnList.tsx
+    type: react-page
+    purpose: Purchase return list
+    entity: Return
+  - path: frontend/pages/PurchaseReturnCreate.tsx
+    type: react-page
+    purpose: Purchase return create
+    entity: Return
+  - path: frontend/pages/SupplierSettlement.tsx
+    type: react-page
+    purpose: Supplier settlement
+    entity: Settlement
+
+  # ---------------- frontend/components ----------------
+  - path: frontend/components/SupplierForm.tsx
+    type: react-component
+    purpose: Supplier form
+    entity: Supplier
+  - path: frontend/components/RFQForm.tsx
+    type: react-component
+    purpose: RFQ form
+    entity: RFQ
+  - path: frontend/components/QuotationForm.tsx
+    type: react-component
+    purpose: Quotation form
+    entity: Quotation
+  - path: frontend/components/QuotationCompareTable.tsx
+    type: react-component
+    purpose: Quotation compare table
+    entity: Quotation
+  - path: frontend/components/PurchaseOrderForm.tsx
+    type: react-component
+    purpose: Purchase order form
+    entity: PurchaseOrder
+  - path: frontend/components/PurchaseOrderItems.tsx
+    type: react-component
+    purpose: Purchase order items
+    entity: PurchaseOrder
+  - path: frontend/components/PurchaseStatusBadge.tsx
+    type: react-component
+    purpose: Purchase status badge
+  - path: frontend/components/PurchaseInvoiceForm.tsx
+    type: react-component
+    purpose: Purchase invoice form
+    entity: Invoice
+  - path: frontend/components/PurchaseReturnForm.tsx
+    type: react-component
+    purpose: Purchase return form
+    entity: Return
+  - path: frontend/components/SettlementForm.tsx
+    type: react-component
+    purpose: Settlement form
+    entity: Settlement
+
+  # ---------------- frontend other layers ----------------
+  - path: frontend/services/purchase.service.ts
+    type: react-api-service
+    purpose: Frontend purchase API service
+  - path: frontend/stores/purchase.store.ts
+    type: react-store
+    purpose: Frontend purchase state store
+  - path: frontend/types/purchase.types.ts
+    type: ts-types
+    purpose: Frontend purchase types
+  - path: frontend/schemas/purchase.schema.ts
+    type: ts-schema
+    purpose: Frontend purchase validation schema
+  - path: frontend/routes/purchase.routes.tsx
+    type: react-routes
+    purpose: Frontend purchase routes
+
+  # ---------------- backend/controllers ----------------
+  - path: backend/controllers/supplier.controller.ts
+    type: nestjs-controller
+    purpose: Supplier controller
+    entity: Supplier
+  - path: backend/controllers/rfq.controller.ts
+    type: nestjs-controller
+    purpose: RFQ controller
+    entity: RFQ
+  - path: backend/controllers/quotation.controller.ts
+    type: nestjs-controller
+    purpose: Quotation controller
+    entity: Quotation
+  - path: backend/controllers/purchase-order.controller.ts
+    type: nestjs-controller
+    purpose: Purchase order controller
+    entity: PurchaseOrder
+  - path: backend/controllers/receipt.controller.ts
+    type: nestjs-controller
+    purpose: Receipt controller
+    entity: Receipt
+  - path: backend/controllers/invoice.controller.ts
+    type: nestjs-controller
+    purpose: Invoice controller
+    entity: Invoice
+  - path: backend/controllers/return.controller.ts
+    type: nestjs-controller
+    purpose: Return controller
+    entity: Return
+  - path: backend/controllers/settlement.controller.ts
+    type: nestjs-controller
+    purpose: Settlement controller
+    entity: Settlement
+
+  # ---------------- backend/services ----------------
+  - path: backend/services/supplier.service.ts
+    type: nestjs-service
+    purpose: Supplier business logic
+    entity: Supplier
+  - path: backend/services/rfq.service.ts
+    type: nestjs-service
+    purpose: RFQ business logic
+    entity: RFQ
+  - path: backend/services/quotation.service.ts
+    type: nestjs-service
+    purpose: Quotation business logic
+    entity: Quotation
+  - path: backend/services/purchase-order.service.ts
+    type: nestjs-service
+    purpose: Purchase order business logic
+    entity: PurchaseOrder
+  - path: backend/services/receipt.service.ts
+    type: nestjs-service
+    purpose: Receipt business logic
+    entity: Receipt
+  - path: backend/services/invoice.service.ts
+    type: nestjs-service
+    purpose: Invoice business logic
+    entity: Invoice
+  - path: backend/services/return.service.ts
+    type: nestjs-service
+    purpose: Return business logic
+    entity: Return
+  - path: backend/services/settlement.service.ts
+    type: nestjs-service
+    purpose: Settlement business logic
+    entity: Settlement
+
+  # ---------------- backend/repositories ----------------
+  - path: backend/repositories/supplier.repository.ts
+    type: nestjs-repository
+    purpose: Supplier DB access (Prisma)
+    entity: Supplier
+  - path: backend/repositories/rfq.repository.ts
+    type: nestjs-repository
+    purpose: RFQ DB access (Prisma)
+    entity: RFQ
+  - path: backend/repositories/quotation.repository.ts
+    type: nestjs-repository
+    purpose: Quotation DB access (Prisma)
+    entity: Quotation
+  - path: backend/repositories/purchase-order.repository.ts
+    type: nestjs-repository
+    purpose: Purchase order DB access (Prisma)
+    entity: PurchaseOrder
+  - path: backend/repositories/receipt.repository.ts
+    type: nestjs-repository
+    purpose: Receipt DB access (Prisma)
+    entity: Receipt
+  - path: backend/repositories/invoice.repository.ts
+    type: nestjs-repository
+    purpose: Invoice DB access (Prisma)
+    entity: Invoice
+  - path: backend/repositories/return.repository.ts
+    type: nestjs-repository
+    purpose: Return DB access (Prisma)
+    entity: Return
+  - path: backend/repositories/settlement.repository.ts
+    type: nestjs-repository
+    purpose: Settlement DB access (Prisma)
+    entity: Settlement
+
+  # ---------------- backend other layers ----------------
+  - path: backend/validators/purchase.validator.ts
+    type: nestjs-validator
+    purpose: Backend purchase validators
+  - path: backend/internal/purchase.internal.ts
+    type: ts-internal
+    purpose: Internal-only helpers (private, no cross-module import)
+  - path: backend/routes/purchase.routes.ts
+    type: nestjs-module
+    purpose: Backend purchase module wiring (NestJS module)
+  - path: backend/types/purchase.types.ts
+    type: ts-types
+    purpose: Backend purchase types
+  - path: backend/index.ts
+    type: ts-entrypoint
+    purpose: M01-purchase backend entrypoint
+
+  # ---------------- database ----------------
+  - path: database/schema.prisma
+    type: prisma-schema
+    purpose: M01 purchase Prisma models
+  - path: database/migrations/M01_purchase_migration.sql
+    type: sql-migration
+    purpose: M01 purchase migration
+  - path: database/seed/M01_purchase_seed.ts
+    type: ts-seed
+    purpose: M01 purchase seed data
+
+  # ---------------- contracts ----------------
+  - path: contracts/M01_purchase.contract.yaml
+    type: contract-yaml
+    purpose: M01 own contract (5-part convention)
+  - path: contracts/M01_to_M02_inventory.yaml
+    type: contract-yaml
+    purpose: M01 -> M02 Inventory contract
+    contract_ref: M02-inventory
+  - path: contracts/M01_to_M04_gst.yaml
+    type: contract-yaml
+    purpose: M01 -> M04 GST contract
+    contract_ref: M04-gst
+  - path: contracts/M01_to_M05_account.yaml
+    type: contract-yaml
+    purpose: M01 -> M05 Account contract
+    contract_ref: M05-account
+
+  # ---------------- wiring ----------------
+  - path: wiring/M01-wiring-map.json
+    type: json-doc
+    purpose: M01 wiring map
+  - path: wiring/M01-wiring-registry.json
+    type: json-doc
+    purpose: M01 wiring registry
+  - path: wiring/M01-dependency-map.json
+    type: json-doc
+    purpose: M01 dependency map
+
+  # ---------------- tests ----------------
+  - path: tests/supplier.service.test.ts
+    type: jest-test
+    purpose: Supplier service unit tests
+    entity: Supplier
+  - path: tests/rfq.service.test.ts
+    type: jest-test
+    purpose: RFQ service unit tests
+    entity: RFQ
+  - path: tests/quotation.service.test.ts
+    type: jest-test
+    purpose: Quotation service unit tests
+    entity: Quotation
+  - path: tests/purchase-order.service.test.ts
+    type: jest-test
+    purpose: Purchase order service unit tests
+    entity: PurchaseOrder
+  - path: tests/receipt.service.test.ts
+    type: jest-test
+    purpose: Receipt service unit tests
+    entity: Receipt
+  - path: tests/invoice.service.test.ts
+    type: jest-test
+    purpose: Invoice service unit tests
+    entity: Invoice
+  - path: tests/return.service.test.ts
+    type: jest-test
+    purpose: Return service unit tests
+    entity: Return
+  - path: tests/settlement.service.test.ts
+    type: jest-test
+    purpose: Settlement service unit tests
+    entity: Settlement
+  - path: tests/purchase.api.test.ts
+    type: supertest-api-test
+    purpose: Purchase API tests
+  - path: tests/purchase.integration.test.ts
+    type: integration-test
+    purpose: Purchase integration tests (real transaction flow)
+
+  # ---------------- docs ----------------
+  - path: docs/README.md
+    type: doc-md
+    purpose: M01 Purchase README
+  - path: docs/WORKFLOW.md
+    type: doc-md
+    purpose: "Workflow: Supplier -> RFQ -> Quotation -> Compare -> Approval -> PO -> Receipt notify M02 -> Invoice -> GST to M04 -> Account to M05 -> Settlement"
+  - path: docs/DATABASE-MAP.md
+    type: doc-md
+    purpose: Database map
+  - path: docs/API-MAP.md
+    type: doc-md
+    purpose: API map
+
+  # ---------------- registry (business-level, not the generator's own manifest) ----------------
+  - path: registry/M01-file-registry.json
+    type: json-doc
+    purpose: M01 file registry (business-level)
+  - path: registry/M01-module-registry.json
+    type: json-doc
+    purpose: M01 module registry (business-level)
+
+completion_gates:
+  - Frontend PASS
+  - Backend PASS
+  - Database PASS
+  - API PASS
+  - Internal Wiring PASS
+  - M02/M04/M05 contracts PASS
+  - Unit Tests PASS
+  - API Tests PASS
+  - Integration Test PASS
+  - Real Purchase Transaction PASS
